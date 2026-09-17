@@ -96,4 +96,24 @@ Node has been around far longer and has been tested across countless production 
 
 ## Class 32: Express & TypeScript
 
+### Q9. Route order and first-match-wins
+
+**Predictions:**
+
+- `GET /api/products/featured` returns the JSON `{ "hit": "by-id", "id": "featured" }`
+- `GET /api/products/42` returns the JSON `{ "hit": "by-id", "id": "42" }`
+- `GET /api/products` returns the JSON `{ "hit": "fallback" }`
+
+**Why:**
+
+Express checks routes top-to-bottom and stops at the first one that matches, which is its "first matching route wins" rule. The dynamic route `/api/products/:id` is registered before the static route `/api/products/featured`, so when `/featured` is requested, `:id` matches first and treats `"featured"` as the id, instead of the extra endpoint it is. Express never reaches the static route.
+
+The `/:id` handler doesn't validate whether the id exists, it just echoes it back as a string. So the response is a successful-looking JSON with `id: "featured"`, not an error.
+
+`GET /api/products` with no trailing or extra nested endpoint doesn't match `/:id` (which needs something after the slash), so Express falls through to the `app.use("/api/products", ...)` fallback, which returns `{ "hit": "fallback" }`. The `?category=toys` is not part of the path or a param but rather a query string, so it doesn't affect matching.
+
+**What I learned:**
+
+Always register static routes (like `/featured`) before dynamic ones (like `/:id`). Otherwise the dynamic route swallows everything and the static route becomes unreachable.
+
 ## Class 33: Middleware & Error Handling
