@@ -60,6 +60,24 @@ According to my understanding, the practical difference is in how each they hand
 **A Failure Scenario:**
 Copying say a file `huge.log` to `backup-huge.log` where the backup disk fills up halfway through. With `pipe()`, the write fails, but the read stream for `huge.log` stays open, its file descriptor is never released. When this operation is ran repeatedly, the process accumulates leaked file handles until it can't open anything else. With `pipeline()`, the moment the write fails, both streams are destroyed, the file handle is released, and the error is delivered to a `try/catch` well, specifically `.catch()`, so the program can log it and move on cleanly.
 
+### Q6. Buffer to hex and base64
+
+**My predictions:** I predicted hex as 2 characters per byte (so 14 characters total for 7 bytes), but I had no idea what base64 would look like.
+
+**Actual output:**
+
+```bash
+4e6f64652e6a73
+Tm9kZS5qcw==
+```
+
+**What I got wrong:**
+Nothing on hex, my initial assumption was right. Base64 confused me, so I didn't guess. After reading, I understand why it looks the way it does.
+
+**For Hex:** `"Node.js"` has 7 characters, each 1 byte in ASCII, so 7 bytes total. Each byte becomes 2 hex characters (0–9, a–f), so 14 characters. The first pair `4e` is the ASCII code for `N` (78 in decimal = 4e in hex), `6f` is `o`, and so on.
+
+**For Base64:** Base64 takes 3 bytes at a time and turns them into 4 text characters, so 7 bytes become 12 characters with an extra 1 character because of the overall 7. The `==` at the end is padding, it means "the last group didn't have a full 3 bytes, so the missing slots are filled with `=`."
+
 ## Class 32: Express & TypeScript
 
 ## Class 33: Middleware & Error Handling
