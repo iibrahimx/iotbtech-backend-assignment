@@ -53,6 +53,13 @@ Both represent the same 5 Arabic characters, but they're counted in different un
 
 `createReadStream` avoids this by reading the file in chunks and processing each chunk before the next arrives. Peak memory stays bound by chunk size, not file size, so a 5 GB file uses roughly the same peak memory as a 5 MB file. The chunk is discarded after processing, and the stream pulls the next one. Nothing bigger than a single chunk lives in memory at any moment and thus savng memory.
 
+### Q5. `pipe()` vs `pipeline()`
+
+According to my understanding, the practical difference is in how each they handle failure. Both connect a readable stream to a writable stream, but `pipe()` just connects them and steps back, with no safeguard or failsafe or the likes. If the destination stream errors midway, the source stream isn't destroyed, its file handle stays open because nothing told it to close. When that is done in a loop and file handles will be leaked until the process runs out and crashes. `pipeline()` on the other hand watches all the streams; if any of them errors, it destroys the rest and sends the error to a promise or callback so the code can react.
+
+**A Failure Scenario:**
+Copying say a file `huge.log` to `backup-huge.log` where the backup disk fills up halfway through. With `pipe()`, the write fails, but the read stream for `huge.log` stays open, its file descriptor is never released. When this operation is ran repeatedly, the process accumulates leaked file handles until it can't open anything else. With `pipeline()`, the moment the write fails, both streams are destroyed, the file handle is released, and the error is delivered to a `try/catch` well, specifically `.catch()`, so the program can log it and move on cleanly.
+
 ## Class 32: Express & TypeScript
 
 ## Class 33: Middleware & Error Handling
