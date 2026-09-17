@@ -171,6 +171,8 @@ c. POST missing a required `name` field → `400 Bad Request`: Because the clien
 d. Unexpected crash inside a route handler → `500 Internal Server Error`: Because the server hit an unexpected problem it couldn't recover from.
 e. Successful GET returning a list → `200 OK`: Because the request succeeded and just returns data, no resource is being created.
 
+## Class 33: Middleware & Error Handling
+
 ### Q15. Middleware execution order with `next()`
 
 **Predicted output, in exact order:**
@@ -193,4 +195,16 @@ M1 out
 
 It runs after the handler finishes, not immediately after `next()`. `next()` hands control to the next middleware (or the route handler) in the chain. The code after `next()` in M1 only runs when that downstream chain completes and control "unwinds" back up. So the sequence is: M1 logs "M1 in" → calls `next()` → M2 runs → handler runs (both "handler starts" and "handler ends" print, because `res.send()` doesn't stop the handler) → control returns to M1 → M1 logs "M1 out". It was noted that `handler ends` prints **before** `M1 out`. That's because the code after `res.send()` in the handler still runs, `res.send()` sends the response but doesn't stop execution. Only when the handler function returns does control travel back up to M1.
 
-## Class 33: Middleware & Error Handling
+### Q16. Middleware that forgets both `next()` and `res.send()`
+
+**What the client sees**
+
+The request hangs. The browser or curl or any API testing tools spins indefinitely until the client-side timeout kicks in. No response is ever sent.
+
+**What the terminal sees**
+
+Only whatever the middleware logged before it stopped, then silence. No error, no crash, no warning. The server keeps running and can serve other requests; the stuck request just never progresses.
+
+**Why Express can't auto-guess**
+
+Because a middleware is allowed to not call `next()` on purpose. Auth middlewares and rate limiters deliberately end the request with a 401 or 429 without calling `next()`, that's their job. Express can't tell the difference between a deliberate stop and a forgotten `next()`. So it waits for an explicit signal: either `next()` (continue) or the response being ended (finish).
