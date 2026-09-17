@@ -166,13 +166,31 @@ A `router.get("/top", ...)` would respond to: `GET /api/products/top` because th
 ### Q14. Status codes for common actions
 
 a. Successful POST creating a product → `201 Created`: Because the request resulted in a new resource being created.
-
 b. Request for a product id that doesn't exist → `404 Not Found`: Because the resource requested does not exist on the server.
-
 c. POST missing a required `name` field → `400 Bad Request`: Because the client sent malformed data, the endpoint exists, but the payload is incomplete.
-
 d. Unexpected crash inside a route handler → `500 Internal Server Error`: Because the server hit an unexpected problem it couldn't recover from.
-
 e. Successful GET returning a list → `200 OK`: Because the request succeeded and just returns data, no resource is being created.
+
+### Q15. Middleware execution order with `next()`
+
+**Predicted output, in exact order:**
+
+```bash
+ibrahim@ibrahim:~/Documents/iotbtech/backend/express-practice$ npm run dev
+
+> express-practice@1.0.0 dev
+> tsx watch app.js
+
+Server running at http://localhost:3005
+M1 in
+M2 GET /
+handler starts
+handler ends
+M1 out
+```
+
+**When `M1 out` runs and why:**
+
+It runs after the handler finishes, not immediately after `next()`. `next()` hands control to the next middleware (or the route handler) in the chain. The code after `next()` in M1 only runs when that downstream chain completes and control "unwinds" back up. So the sequence is: M1 logs "M1 in" → calls `next()` → M2 runs → handler runs (both "handler starts" and "handler ends" print, because `res.send()` doesn't stop the handler) → control returns to M1 → M1 logs "M1 out". It was noted that `handler ends` prints **before** `M1 out`. That's because the code after `res.send()` in the handler still runs, `res.send()` sends the response but doesn't stop execution. Only when the handler function returns does control travel back up to M1.
 
 ## Class 33: Middleware & Error Handling
