@@ -47,6 +47,12 @@ My prediction was wrong on the third line because I assumed `"مرحبا".length
 **Why the third number differs from the first:**
 Both represent the same 5 Arabic characters, but they're counted in different units. Line 1 (`Buffer.from("مرحبا").length`) counts bytes, totalling 10 while line 3 (`"مرحبا".length`) counts UTF-16 code units, totalling 5.
 
+### Q4. Why `readFileSync` crashes on a 5 GB file
+
+`readFileSync` reads the entire 5 GB file into RAM in a single operation. The file doesn't go to disk, it's already on disk. It goes into Node's memory (specifically the V8 heap when the content is decoded as a JavaScript string). On an 8 GB machine, that 5 GB isn't the only thing in RAM, the OS, VS Code, the browser, and Node itself are already using several GB. On top of that, decoding the raw bytes into a UTF-8 string typically doubles the memory footprint, so the real cost is much higher than the 5GB file size and even the 8GB RAM size, maybe closer to 10 GB. That exceeds what the machine has, so Node crashes with a heap out-of-memory error.
+
+`createReadStream` avoids this by reading the file in chunks and processing each chunk before the next arrives. Peak memory stays bound by chunk size, not file size, so a 5 GB file uses roughly the same peak memory as a 5 MB file. The chunk is discarded after processing, and the stream pulls the next one. Nothing bigger than a single chunk lives in memory at any moment and thus savng memory.
+
 ## Class 32: Express & TypeScript
 
 ## Class 33: Middleware & Error Handling
