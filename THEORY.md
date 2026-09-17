@@ -163,4 +163,16 @@ The request body arrives as raw bytes. Express doesn't parse it automatically. e
 
 A `router.get("/top", ...)` would respond to: `GET /api/products/top` because the router itself doesn't know where it's mounted. It only defines relative paths. The `app.use` supplies the prefix, and Express concatenates them when matching requests. This means the same router could be mounted at different prefixes (like `/v1/products` or `/v2/products`) without changing its internal code.
 
+### Q14. Status codes for common actions
+
+a. Successful POST creating a product → `201 Created`: Because the request resulted in a new resource being created.
+
+b. Request for a product id that doesn't exist → `404 Not Found`: Because the resource requested does not exist on the server.
+
+c. POST missing a required `name` field → `400 Bad Request`: Because the client sent malformed data, the endpoint exists, but the payload is incomplete.
+
+d. Unexpected crash inside a route handler → `500 Internal Server Error`: Because the server hit an unexpected problem it couldn't recover from.
+
+e. Successful GET returning a list → `200 OK`: Because the request succeeded and just returns data, no resource is being created.
+
 ## Class 33: Middleware & Error Handling
