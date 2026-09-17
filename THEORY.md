@@ -82,6 +82,18 @@ Nothing on hex, my initial assumption was right. Base64 confused me, so I didn't
 
 "Flat" simply means memory usage stays the same no matter how large the input gets, it doesn't grow with the file. The `pipe` approach is flat: it reads the file in chunks, processes each chunk, discards it, and moves to the next. Peak memory is bound by chunk size, not by file size. The `bucket` approach on the other hand is "linear", that is, it reads the entire file into memory at once, so doubling the file doubles the memory used. That's why a 10,000-row file and a 10,000,000-row file both fit in the same small footprint under the pipe approach, but the bucket approach would use roughly 1000× more memory on the larger file. The flat approach stays flat because each chunk is the same size regardless of how big the parent file is, the stream never holds more than one chunk at a time.
 
+### Q8. Bun vs Node.js
+
+**Three things Bun does out of the box:**
+
+1. **Runs TypeScript directly** — `bun script.ts` works, no build step or `tsx` runner needed.
+2. **Built-in test runner** — `bun test` runs tests without installing Jest or Vitest as a dependency.
+3. **Much faster installs and runs** — `bun install` is often several times faster than `npm install` as well as its runs.
+
+**My pick: Node.js.**
+
+Node has been around far longer and has been tested across countless production environments and edge cases. That track record means bugs are well-known and fixes exist. Bun looks perfect on the surface but is still fairly new, and there are reports of performance and compatibility issues from heavy users. For a real team project today, betting on the proven runtime is safer than betting on the newer all-in-one tool until it has more strength testing. But I'd still use Bun for quick scripts and local experiments where speed matters more than long-term stability.
+
 ## Class 32: Express & TypeScript
 
 ## Class 33: Middleware & Error Handling
