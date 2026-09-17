@@ -152,4 +152,15 @@ Near the top of the app, before any route that reads req.body (POST, PUT/PATCH).
 
 The request body arrives as raw bytes. Express doesn't parse it automatically. express.json() is the middleware that reads those bytes, checks that the Content-Type is application/json, parses the JSON, and attaches the resulting object to `req.body`. Without it, no middleware ever sets `req.body`, so the property doesn't exist and reads as undefined. A subtle detail I observed was that it's undefined and not {}. The property is completely absent, not empty. Middleware creates the property; without middleware, there's nothing to read to begin with.
 
+### Q13. Router prefix behavior
+
+`app.use("/api/products", productRouter)` mounts the router at the prefix `/api/products`. Inside the router, every path is relative to that prefix.
+
+**Full URLs the two routes respond to:**
+
+- `router.get("/", ...)` → `GET /api/products`
+- `router.get("/:id", ...)` → `GET /api/products/:id`
+
+A `router.get("/top", ...)` would respond to: `GET /api/products/top` because the router itself doesn't know where it's mounted. It only defines relative paths. The `app.use` supplies the prefix, and Express concatenates them when matching requests. This means the same router could be mounted at different prefixes (like `/v1/products` or `/v2/products`) without changing its internal code.
+
 ## Class 33: Middleware & Error Handling
