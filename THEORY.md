@@ -116,4 +116,14 @@ The `/:id` handler doesn't validate whether the id exists, it just echoes it bac
 
 Always register static routes (like `/featured`) before dynamic ones (like `/:id`). Otherwise the dynamic route swallows everything and the static route becomes unreachable.
 
+### Q10. Type of `req.params.id`
+
+`req.params.id` is always a string. Even if the URL contains `/api/products/42`, Express hands `"42"` back, with quotes meaning we get the number 42 in string form.
+
+**Conversion expression:** `Number(req.params.id)`
+
+**Why Express doesn't convert it for me:**
+
+A URL path segment is just text sent over the network. Express doesn't know whether `:id` is meant to be a number, a name, a UUID, or anything else, that's decided by me, the developer, when I named the parameter. So Express hands it to me as-is (a string) and leaves the interpretation to my code.
+
 ## Class 33: Middleware & Error Handling
