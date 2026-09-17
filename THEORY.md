@@ -136,4 +136,20 @@ A URL path segment is just text sent over the network. Express doesn't know whet
 
 If we switch from an in-memory array to reading products from a CSV at boot, I edit only one file: `product.service.ts`. That's because the service is the only layer that knows where data lives. Routes and controllers don't care or know about storage, they call service functions and trust the result. So a storage change stays isolated to the service, and nothing else needs to change.
 
+### Q12. Why `req.body` is undefined without `express.json()`
+
+**The missing line:**
+
+```typescript
+app.use(express.json());
+```
+
+**Where it must go**
+
+Near the top of the app, before any route that reads req.body (POST, PUT/PATCH). If it's registered after the routes, the request reaches the handler before the body has been parsed.
+
+**Why the handler sees undefined**
+
+The request body arrives as raw bytes. Express doesn't parse it automatically. express.json() is the middleware that reads those bytes, checks that the Content-Type is application/json, parses the JSON, and attaches the resulting object to `req.body`. Without it, no middleware ever sets `req.body`, so the property doesn't exist and reads as undefined. A subtle detail I observed was that it's undefined and not {}. The property is completely absent, not empty. Middleware creates the property; without middleware, there's nothing to read to begin with.
+
 ## Class 33: Middleware & Error Handling
