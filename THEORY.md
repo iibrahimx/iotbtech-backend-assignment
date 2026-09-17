@@ -126,4 +126,14 @@ Always register static routes (like `/featured`) before dynamic ones (like `/:id
 
 A URL path segment is just text sent over the network. Express doesn't know whether `:id` is meant to be a number, a name, a UUID, or anything else, that's decided by me, the developer, when I named the parameter. So Express hands it to me as-is (a string) and leaves the interpretation to my code.
 
+### Q11. Routes vs Controllers vs Services
+
+**Route:** decides which URL pattern maps to which controller function, it's the matching rule between incoming paths and handlers, and it doesn't know anything about data.
+
+**Controller:** handles one HTTP request/response cycle, reads inputs from `req` (params, body, query), calls the service, and sends a response with `res`. It's the only layer that touches `req` and `res`.
+
+**Service:** holds the business logic and data access, it's the only layer that knows how data is stored (be it array, CSV, database etc.) and retrieved, and it never touches `req` or `res`.
+
+If we switch from an in-memory array to reading products from a CSV at boot, I edit only one file: `product.service.ts`. That's because the service is the only layer that knows where data lives. Routes and controllers don't care or know about storage, they call service functions and trust the result. So a storage change stays isolated to the service, and nothing else needs to change.
+
 ## Class 33: Middleware & Error Handling
