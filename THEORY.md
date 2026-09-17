@@ -78,6 +78,10 @@ Nothing on hex, my initial assumption was right. Base64 confused me, so I didn't
 
 **For Base64:** Base64 takes 3 bytes at a time and turns them into 4 text characters, so 7 bytes become 12 characters with an extra 1 character because of the overall 7. The `==` at the end is padding, it means "the last group didn't have a full 3 bytes, so the missing slots are filled with `=`."
 
+### Q7. Streams keep memory flat
+
+"Flat" simply means memory usage stays the same no matter how large the input gets, it doesn't grow with the file. The `pipe` approach is flat: it reads the file in chunks, processes each chunk, discards it, and moves to the next. Peak memory is bound by chunk size, not by file size. The `bucket` approach on the other hand is "linear", that is, it reads the entire file into memory at once, so doubling the file doubles the memory used. That's why a 10,000-row file and a 10,000,000-row file both fit in the same small footprint under the pipe approach, but the bucket approach would use roughly 1000× more memory on the larger file. The flat approach stays flat because each chunk is the same size regardless of how big the parent file is, the stream never holds more than one chunk at a time.
+
 ## Class 32: Express & TypeScript
 
 ## Class 33: Middleware & Error Handling
