@@ -1,0 +1,17 @@
+{
+  "name": "mini-project",
+  "version": "1.0.0",
+  "description": "Products inventory CLI and API - IOTBTECH 2026 backend assignment",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "generate": "tsx scripts/generate.ts",
+    "aggregate": "tsx scripts/aggregate.ts"
+  },
+  "keywords": [],
+  "author": "Ibrahim Ibrahim",
+  "license": "ISC",
+  "type": "module"
+}
