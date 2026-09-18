@@ -220,3 +220,31 @@ Normal middleware takes `(req, res, next)` exactly 3 parameters. An error handle
 **What happens if you trim to 3 params (`(err, req, res)`)**
 
 Express reclassifies the function as normal middleware. Now it's broken on both fronts, it isn't called during the error path (Express only invokes 4-param handlers when an error occurs), and it isn't meaningfully useful on the normal path either because its body expects an error that isn't there. Errors then fall through to Express's default handler, which returns an HTML stack trace and leaks internal details to the client. Silent failure with no warning, no error, which is why this bug is so common.
+
+### Q18. `next()` vs `next(err)`
+
+**Explain the difference**
+
+`next()` continues the request to the next "normal" middleware in the chain or pipeline. `next(err)` abandons the normal chain and jumps directly to the first 4-parameter error handler, skipping every regular middleware in between.
+
+**Given Pipeline:** `[logger, json, routes, errorHandler]`
+
+**Trace (a): `next()` called in the middle of routes:**
+
+1. Request hits `logger` → logs, calls `next()`.
+2. Request hits `json` → parses body, calls `next()`.
+3. Request hits `routes` → handler runs, calls `next()`.
+4. No more normal middleware so it falls through to Express's default 404.
+5. `errorHandler` is not invoked, because no error was passed.
+
+**Trace (b): `next(err)` called in the middle of routes:**
+
+1. Request hits `logger` → logs, calls `next()`.
+2. Request hits `json` → parses body, class `next()`.
+3. Request hits `routes` → handler calls `next(err)`.
+4. Express skips the default 404 path and jumps directly to the first 4-param handler, `errorHandler`.
+5. `errorHandler` receives `err`, logs it, sends a 500 response.
+
+**Which one skips the remaining regular middleware**
+
+`next(err)` skips every regular middleware between the call site and the error handler. `next()` does not skip, it continues linearly.
