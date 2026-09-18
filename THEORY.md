@@ -290,3 +290,18 @@ So there are two phases:
 
 **How to check the version**
 Run `npm ls express` in the project, or look in `package.json` under "dependencies". Express 4.x versions start with `4.`, Express 5.x versions start with `5.`.
+
+### Q21. 404 handler vs error handler ordering
+
+**The difference**
+
+- A **404** happens when the request matched no route, nothing failed, the URL just wasn't found. The response is "not found," and the client should look elsewhere.
+- A **500** happens when a matching route ran but something inside it threw. The resource existed in principle, but the server couldn't complete the response. The problem is on the server.
+
+**Why the 404 handler must come before the error handler**
+
+Because that's the pipeline convention, and because of an edge case. On a normal "no route matched" request, either order actually works, Express skips 4-param functions when no error is present. But if the **404 handler itself throws** (a bug in it, a bad reference, etc.), the error must be caught by a later 4-param handler. With the correct order (`routes → notFoundHandler → errorHandler`), the throw inside `notFoundHandler` propagates forward to `errorHandler` and is caught. With the swapped order (`routes → errorHandler → notFoundHandler`), there's nothing after `notFoundHandler` to catch its throw, so the error falls through to Express's default handler, which returns an HTML stack trace and leaks internals to the client.
+
+**If swapped**
+
+For normal "no route" requests, nothing visibly breaks, Express skips the error handler (no error present) and continues to the 404 handler. But if the 404 handler ever fails, that is, if an unhandled exception or crash occurs inside the 404-handling code itself, the error goes unhandled. That's why the convention exists. Simply put, it makes error handling robust even when error-handling code itself breaks.
