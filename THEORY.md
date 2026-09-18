@@ -248,3 +248,12 @@ Express reclassifies the function as normal middleware. Now it's broken on both 
 **Which one skips the remaining regular middleware**
 
 `next(err)` skips every regular middleware between the call site and the error handler. `next()` does not skip, it continues linearly.
+
+### Q19. Why the log line runs after the handler
+
+`res.on("finish", ...)` "registers" a listener on the response object. The listener is a function that will be called later, it does not run immediately. When the middleware calls `next()`, control goes downstream to the handler, which eventually calls `res.send()`. Only after the response has been fully sent does Node emit the `"finish"` event on `res`. That's when the registered listener "fires" and prints the log line. The timing is accurate because `start` was captured before `next()` (the moment the request entered the middleware), and the subtraction runs **inside** the listener (the moment the response finished). The difference is the true end-to-end request duration.
+
+So there are two phases:
+
+1. **Register phase**: runs immediately when the middleware executes. It captures `start = Date.now()` and attaches the listener.
+2. **Fire phase**: runs later, when the response is fully sent. Reads `res.statusCode`, computes `Date.now() - start`, and logs it.
