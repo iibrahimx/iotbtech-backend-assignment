@@ -8,17 +8,17 @@
 
 **The exact output from running `node app.js --port 8080 --host localhost`:**
 
-```bash
-[
-'/home/ibrahim/.nvm/versions/node/v24.19.0/bin/node',
-'/home/ibrahim/Documents/iotbtech/backend/be-assignment-scratch/app.js',
-'--port',
-'8080',
-'--host',
-'localhost'
-]
-[ '--port', '8080', '--host', 'localhost' ]
-```
+    ```bash
+    [
+    '/home/ibrahim/.nvm/versions/node/v24.19.0/bin/node',
+    '/home/ibrahim/Documents/iotbtech/backend/be-assignment-scratch/app.js',
+    '--port',
+    '8080',
+    '--host',
+    'localhost'
+    ]
+    [ '--port', '8080', '--host', 'localhost' ]
+    ```
 
 **What do indices 0, 1, and 2+ of process.argv represent?**
 From my understanding, `process.argv` holds the full command as Node received it. Index `0` is the path to the Node executable, index `1` is the path to the script being run, and index `2` onward are the actual arguments I typed, so `.slice(2)` differs from the full array because it deliberately skips the first two context entries that belong to Node and the script rather than to my program's input.
@@ -33,11 +33,11 @@ Because the first two elements of `process.argv` don't belong to my program, the
 
 **Actual output:**
 
-```bash
-10
-5
-5
-```
+    ```bash
+    10
+    5
+    5
+    ```
 
 My prediction was wrong on the third line because I assumed `"مرحبا".length` would equal the byte length. It doesn't. `String.prototype.length` does not count bytes; it counts UTF-16 code units, which is the encoding JavaScript uses internally for strings. Each Arabic character fits in one UTF-16 code unit, so the length is 5, not 10.
 
@@ -66,10 +66,10 @@ Copying say a file `huge.log` to `backup-huge.log` where the backup disk fills u
 
 **Actual output:**
 
-```bash
-4e6f64652e6a73
-Tm9kZS5qcw==
-```
+    ```bash
+    4e6f64652e6a73
+    Tm9kZS5qcw==
+    ```
 
 **What I got wrong:**
 Nothing on hex, my initial assumption was right. Base64 confused me, so I didn't guess. After reading, I understand why it looks the way it does.
@@ -140,9 +140,9 @@ If we switch from an in-memory array to reading products from a CSV at boot, I e
 
 **The missing line:**
 
-```typescript
-app.use(express.json());
-```
+    ```typescript
+    app.use(express.json());
+    ```
 
 **Where it must go**
 
@@ -177,19 +177,19 @@ e. Successful GET returning a list → `200 OK`: Because the request succeeded a
 
 **Predicted output, in exact order:**
 
-```bash
-ibrahim@ibrahim:~/Documents/iotbtech/backend/express-practice$ npm run dev
+    ```bash
+    ibrahim@ibrahim:~/Documents/iotbtech/backend/express-practice$ npm run dev
 
-> express-practice@1.0.0 dev
-> tsx watch app.js
+    > express-practice@1.0.0 dev
+    > tsx watch app.js
 
-Server running at http://localhost:3005
-M1 in
-M2 GET /
-handler starts
-handler ends
-M1 out
-```
+    Server running at http://localhost:3005
+    M1 in
+    M2 GET /
+    handler starts
+    handler ends
+    M1 out
+    ```
 
 **When `M1 out` runs and why:**
 
@@ -257,3 +257,36 @@ So there are two phases:
 
 1. **Register phase**: runs immediately when the middleware executes. It captures `start = Date.now()` and attaches the listener.
 2. **Fire phase**: runs later, when the response is fully sent. Reads `res.statusCode`, computes `Date.now() - start`, and logs it.
+
+### Q20. Async errors in Express 4 vs Express 5
+
+**Express 4:** It doesn't attach a `.catch()` to the Promise returned by an async handler. If the handler rejects (e.g., `await findProduct(id)` throws), the rejection escapes Express entirely. Depending on the Node version, this leads to an **unhandled promise rejection** — the process may crash, or the request may hang with no response. Either way, the error handler is never called.
+
+**Express 5:** It **does** attach a `.catch()` to the handler's Promise. If it rejects, Express automatically calls `next(err)`, which sends the request to the error handler — same behavior as a synchronous throw.
+
+**Two patterns to fix it in Express 4:**
+
+1.  **try/catch + `next(err)`** inside each async handler:
+
+    ```typescript
+    app.get("/products/:id", async (req, res, next) => {
+      try {
+        const product = await findProduct(Number(req.params.id));
+        res.json(product);
+      } catch (err) {
+        next(err);
+      }
+    });
+    ```
+
+2.  An asyncHandler wrapper that catches rejections once and forwards them to next:
+
+        ```typescript
+        const asyncHandler = (fn) => (req, res, next) =>
+        Promise.resolve(fn(req, res, next)).catch(next);
+        ```
+
+    Then every async route uses asyncHandler(async (req, res) => { ... }). No try/catch boilerplate repeated in every handler.
+
+**How to check the version**
+Run `npm ls express` in the project, or look in `package.json` under "dependencies". Express 4.x versions start with `4.`, Express 5.x versions start with `5.`.
