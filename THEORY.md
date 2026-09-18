@@ -208,3 +208,15 @@ Only whatever the middleware logged before it stopped, then silence. No error, n
 **Why Express can't auto-guess**
 
 Because a middleware is allowed to not call `next()` on purpose. Auth middlewares and rate limiters deliberately end the request with a 401 or 429 without calling `next()`, that's their job. Express can't tell the difference between a deliberate stop and a forgotten `next()`. So it waits for an explicit signal: either `next()` (continue) or the response being ended (finish).
+
+### Q17. How Express identifies an error handler
+
+Express decides by inspecting the number of parameters the function declares, it does so by calling `function.length` internally. Fewer than 4 parameters means normal "middleware". Exactly 4 means "error handler".
+
+**Why 4 specifically**
+
+Normal middleware takes `(req, res, next)` exactly 3 parameters. An error handler on the other hand needs one extra piece of information: the "error" itself. So it takes `(err, req, res, next)` which equates to 4 parameters. That extra first parameter is the signal.
+
+**What happens if you trim to 3 params (`(err, req, res)`)**
+
+Express reclassifies the function as normal middleware. Now it's broken on both fronts, it isn't called during the error path (Express only invokes 4-param handlers when an error occurs), and it isn't meaningfully useful on the normal path either because its body expects an error that isn't there. Errors then fall through to Express's default handler, which returns an HTML stack trace and leaks internal details to the client. Silent failure with no warning, no error, which is why this bug is so common.
