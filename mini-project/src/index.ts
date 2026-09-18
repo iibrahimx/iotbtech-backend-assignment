@@ -3,9 +3,11 @@ import productRouter from "./routes/product.routes.js";
 import { requestLogger } from "./middleware/requestLogger.js";
 import { notFoundHandler } from "./middleware/notFoundHandler.js";
 import { errorHandler } from "./middleware/errorHandler.js";
+import { requestId } from "./middleware/requestId.js";
 
 const app = express();
 
+app.use(requestId);
 app.use(requestLogger);
 app.use(express.json());
 
